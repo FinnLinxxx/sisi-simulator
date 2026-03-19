@@ -96,6 +96,48 @@ bool SAVE_HEMISPHERE = false;
 bool SAVE_PHOTON_PATHS = false;
 bool SAVE_SUMMARY = false;
 
+
+bool isAbsolutePath(const std::string& path) {
+  if (path.empty()) return false;
+
+#ifdef _WIN32
+  // C:\...  or  \\server\share\...
+  if (path.size() >= 2 &&
+      std::isalpha(static_cast<unsigned char>(path[0])) &&
+      path[1] == ':') {
+    return true;
+  }
+  if (path.size() >= 2 &&
+      (path[0] == '\\' || path[0] == '/') &&
+      (path[1] == '\\' || path[1] == '/')) {
+    return true;
+  }
+  return false;
+#else
+  return path[0] == '/';
+#endif
+}
+
+std::string getDirectoryName(const std::string& path) {
+  std::string normalized = path;
+  std::replace(normalized.begin(), normalized.end(), '\\', '/');
+
+  std::size_t pos = normalized.find_last_of('/');
+  if (pos == std::string::npos) {
+    return ".";
+  }
+  if (pos == 0) {
+    return "/";
+  }
+  return normalized.substr(0, pos);
+}
+
+std::string joinPaths(const std::string& base, const std::string& rel) {
+  if (base.empty() || base == ".") return rel;
+  if (base.back() == '/' || base.back() == '\\') return base + rel;
+  return base + "/" + rel;
+}
+
 ///////////////////////////////////////
 // Photon-Log (mainly for sisi_vis.py)
 ///////////////////////////////////////
@@ -364,6 +406,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
            microfacet_std_deviation_deg);
 
   std::string full_path = result_path + "/" + folderPart;
+//xxx
+std::cout << "full_path   = " << full_path << std::endl;
 
 // Create the output directory
 // Cross-platform handling for Windows and Linux)
@@ -1107,7 +1151,22 @@ int main(int argc, char **argv) {
                  ENABLE_EXTENDED_FLAGS | (prev_mode & ~ENABLE_QUICK_EDIT_MODE));
 #endif
 
-  SisiConfig config = loadConfig(argv[1]);
+std::string config_file = argv[1];
+SisiConfig config = loadConfig(config_file);
+
+std::string config_dir = getDirectoryName(config_file);
+std::string& result_path = config.active_mode.output.result_path;
+
+if (!isAbsolutePath(result_path)) {
+  result_path = joinPaths(config_dir, result_path);
+}
+
+
+//xxx
+std::cout << "config_file = " << config_file << std::endl;
+std::cout << "config_dir  = " << config_dir << std::endl;
+std::cout << "result_path = " << result_path << std::endl;
+
   // Global Switch, Debugging
   TRACK_PHOTON_PATHS = config.active_mode.diagnostics.track_photon_paths;
   PRINT_RESULTS = config.active_mode.diagnostics.print_results;

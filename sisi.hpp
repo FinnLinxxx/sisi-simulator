@@ -21,6 +21,8 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <cctype>
+
 
 // Add the following line to create your own distribution
 // (my_custom_distribution(..)) -> recompile
@@ -771,4 +773,8 @@ inline Direction3D scatter(const Direction3D &wo, const double &g,
   return normalize(wi);
 }
 
+// relative paths
+bool isAbsolutePath(const std::string& path);
+std::string getDirectoryName(const std::string& path);
+std::string joinPaths(const std::string& base, const std::string& rel);
 #endif // SISI_HPP

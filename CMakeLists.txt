@@ -21,25 +21,27 @@ target_link_libraries(sisi yaml-cpp)
 
 # Only for Windows/Visual Studio: Copys config to .exe path
 if(MSVC)
-    set(SISI_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/config.yaml")
-    set(SISI_CONFIG_EXAMPLE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/config.example.yaml")
+    set(SISI_WORKSPACE_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/config.yaml")
+    set(SISI_WORKSPACE_CONFIG_EXAMPLE "${CMAKE_CURRENT_SOURCE_DIR}/config.example.yaml")
 
-    if(EXISTS "${SISI_CONFIG_FILE}")
-        set(SISI_CONFIG_SOURCE "${SISI_CONFIG_FILE}")
-        message(STATUS "Using user-provided config.yaml for Visual Studio builds.")
-    else()
-        set(SISI_CONFIG_SOURCE "${SISI_CONFIG_EXAMPLE_FILE}")
+    if(EXISTS "${SISI_WORKSPACE_CONFIG}")
+        message(STATUS "Using existing config.yaml from workspace root.")
+    elseif(EXISTS "${SISI_WORKSPACE_CONFIG_EXAMPLE}")
         message(WARNING
-            "config.yaml was not found. Falling back to config.example.yaml and copying it "
-            "as config.yaml to the executable directory. Please review config.yaml."
+            "config.yaml was not found in the workspace root. "
+            "Creating it from config.example.yaml. "
+            "Please review and adjust config.yaml before production use."
+        )
+        configure_file(
+            "${SISI_WORKSPACE_CONFIG_EXAMPLE}"
+            "${SISI_WORKSPACE_CONFIG}"
+            COPYONLY
+        )
+    else()
+        message(WARNING
+            "Neither config.yaml nor config.example.yaml was found in the workspace root."
         )
     endif()
-    add_custom_command(TARGET sisi POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_CURRENT_SOURCE_DIR}/config.yaml"
-        "$<TARGET_FILE_DIR:sisi>/config.yaml"
-        COMMENT "Windows: Copy the configuration to the Build folder..."
-    )
 endif()
 
 # -lm 
