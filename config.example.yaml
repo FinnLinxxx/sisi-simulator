@@ -45,12 +45,12 @@ laserscanner:
     result_path: sisi_data/laserscanner
 
 # ==========================================
-# MODE 2: Material-Impulsantwort (Stethoskop)
+# MODE 2: Material-Impulsantwort
 # ==========================================
 material_impulse:
   optic:
-    radius_m: 999.0
-    working_distance_m: 0.0001
+    radius_m: 9.999
+    working_distance_m: 1. #not to close
     pinhole_sigma_factor: 0.0
   beam:
     sigma_x_m: 0.0
@@ -59,7 +59,7 @@ material_impulse:
   physics_override:
     force_100_percent_transmission: true
   scan:
-    angles_deg: [0]
+    angles_deg: [50]
   diagnostics:
     track_photon_paths: false
     print_results: true

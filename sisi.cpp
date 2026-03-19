@@ -446,6 +446,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   std::ofstream spotFile;
   if (SAVE_REGISTERED_SPOT) {
     spotFile.open(filenameSpot, std::ios::out | std::ios::app);
+    spotFile << "// x_surf y_surf z_surf x_vol y_vol z_vol "
+            "inner_dist scatter_count type\n";
     spotFile << std::fixed << std::setprecision(6);
     if (!spotFile.is_open()) {
       std::cout << "Failed to open " << filenameSpot << std::endl;
@@ -678,8 +680,11 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
 
             // Photon is leaving the specimen and is refracted at currentPos
             if (directionAfterMaterialTransition.i == 2) {
-              // Photon leaves specimen
+              // Photon leaves specimen, volumetric position
+	      double lastX = currentPos.x;
+	      double lastY = currentPos.y;
               double lastZ = currentPos.z;
+              // Photon leaves specimen, surface position (genuine laserspot)
               currentPos =
                   add(currentPos, scalarMultiply(currentDir, distToBoundary));
 
@@ -815,8 +820,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
                 }
 
                 if (SAVE_REGISTERED_SPOT) {
-                  spotFile << currentPos.x << " " << currentPos.y << " "
-                           << lastZ << " 2" << std::endl;
+		  spotFile << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
+         << lastX << " " << lastY << " " << lastZ << " " << photon_inner_life_distance << " " << s_total_count << " 2 " << std::endl;
                 }
 
                 // DiodeHitPlane?:
@@ -1000,8 +1005,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
           }
 
           if (SAVE_REGISTERED_SPOT) {
-            spotFile << currentPos.x << " " << currentPos.y << " "
-                     << currentPos.z << " 1" << std::endl;
+	    spotFile << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
+         <<  currentPos.x<< " " << currentPos.y << " " << currentPos.z << " " << " " << photon_inner_life_distance << " " << s_total_count << " 1 " << std::endl;
           }
 
           g_log.log(pid, ReflectedDirect,
