@@ -55,3 +55,6 @@ sisi_data/patterson/*
 !sisi_data/laserscanner/.gitkeep
 !sisi_data/material_impulse/.gitkeep
 !sisi_data/patterson/.gitkeep
+
+# Runtime / user config
+config.yaml
