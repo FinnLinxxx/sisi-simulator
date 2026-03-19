@@ -1,6 +1,28 @@
 # SISI Simulator
 
+## Test
 
+<details open>
+<summary><b> Linux </b></summary>
+<br>
+
+```bash
+# Repository 
+git clone https://git.geo.tuwien.ac.at/finnlinxxx/sisi-simulator.git
+```
+
+</details>
+
+<details>
+<summary><b> Windows </b></summary>
+<br>
+
+```powershell
+# Repository 
+git clone https://git.geo.tuwien.ac.at/finnlinxxx/sisi-simulator.git
+```
+
+</details>
 
 ## Getting started
 
