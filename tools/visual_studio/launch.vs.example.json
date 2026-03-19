@@ -1,0 +1,13 @@
+{
+  "version": "0.2.1",
+  "configurations": [
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "sisi.exe",
+      "name": "Run sisi (config.yaml)",
+      "args": [ "config.yaml" ],
+      "currentDir": "${workspaceRoot}"
+    }
+  ]
+}
