@@ -406,8 +406,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
            microfacet_std_deviation_deg);
 
   std::string full_path = result_path + "/" + folderPart;
-//xxx
-std::cout << "full_path   = " << full_path << std::endl;
+// Debug output paths
+//std::cout << "full_path   = " << full_path << std::endl;
 
 // Create the output directory
 // Cross-platform handling for Windows and Linux)
@@ -1162,10 +1162,10 @@ if (!isAbsolutePath(result_path)) {
 }
 
 
-//xxx
-std::cout << "config_file = " << config_file << std::endl;
-std::cout << "config_dir  = " << config_dir << std::endl;
-std::cout << "result_path = " << result_path << std::endl;
+// Debug output paths
+//std::cout << "config_file = " << config_file << std::endl;
+//std::cout << "config_dir  = " << config_dir << std::endl;
+//std::cout << "result_path = " << result_path << std::endl;
 
   // Global Switch, Debugging
   TRACK_PHOTON_PATHS = config.active_mode.diagnostics.track_photon_paths;
