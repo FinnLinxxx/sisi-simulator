@@ -94,7 +94,7 @@ bool SAVE_PATH_LENGTHS = false;
 bool SAVE_REGISTERED_SPOT = false;
 bool SAVE_HEMISPHERE = false;
 bool SAVE_PHOTON_PATHS = false;
-bool SAVE_SUMMARY = false;
+bool SAVE_RESULTS = false;
 
 
 bool isAbsolutePath(const std::string& path) {
@@ -297,8 +297,8 @@ SisiConfig loadConfig(const std::string &filename) {
       mode_node["output"]["save_hemisphere"].as<bool>();
   config.active_mode.output.save_photon_paths =
       mode_node["output"]["save_photon_paths"].as<bool>();
-  config.active_mode.output.save_summary =
-      mode_node["output"]["save_summary"].as<bool>();
+  config.active_mode.output.save_results =
+      mode_node["output"]["save_results"].as<bool>();
   config.active_mode.output.result_path =
       mode_node["output"]["result_path"].as<std::string>();
 
@@ -1081,14 +1081,14 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   }
   // clang-format on
 
-  // SAVE_SUMMARY
+  // SAVE_RESULTS
   char filename[512];
   snprintf(filename, sizeof(filename), "%s/%.2f_%.4f_%.4f_%.2f.txt",
            full_path.c_str(), n_refractive_index, mu_a / 1000., mu_s / 1000.,
            microfacet_std_deviation_deg);
 
   std::ofstream sFile;
-  if (SAVE_SUMMARY) {
+  if (SAVE_RESULTS) {
     sFile.open(filename, std::ios::out | std::ios::app);
     sFile << std::fixed << std::setprecision(6);
 
@@ -1174,7 +1174,7 @@ if (!isAbsolutePath(result_path)) {
   SAVE_PATH_LENGTHS = config.active_mode.output.save_path_lengths;
   SAVE_REGISTERED_SPOT = config.active_mode.output.save_registered_spot;
   SAVE_HEMISPHERE = config.active_mode.output.save_hemisphere;
-  SAVE_SUMMARY = config.active_mode.output.save_summary;
+  SAVE_RESULTS = config.active_mode.output.save_results;
   SAVE_PHOTON_PATHS = config.active_mode.output.save_photon_paths;
 
   // C++ style Random Number Generator (rng)

@@ -36,13 +36,13 @@ laserscanner:
     track_photon_paths: false
     print_results: true
   output:
+    save_results: true
     save_path_lengths: true
     save_registered_spot: true
     save_hemisphere: true
     hemisphere_radius_m: 5.0
     save_photon_paths: false
     result_path: sisi_data/laserscanner
-    save_summary: true
 
 # ==========================================
 # MODE 2: Material-Impulsantwort (Stethoskop)
@@ -64,13 +64,13 @@ material_impulse:
     track_photon_paths: false
     print_results: true
   output:
+    save_results: true
     save_path_lengths: true
     save_registered_spot: true
     save_hemisphere: false
     hemisphere_radius_m: 5.0
     save_photon_paths: false
     result_path: sisi_data/material_impulse
-    save_summary: true
 
 # ==============================================================================
 # MODE 3: PATTERSON
@@ -96,10 +96,10 @@ patterson:
     track_photon_paths: false
     print_results: true
   output:
+    save_results: false
     save_path_lengths: true
     save_registered_spot: true
     save_hemisphere: false
     hemisphere_radius_m: 5.0
     save_photon_paths: false
     result_path: sisi_data/patterson
-    save_summary: false

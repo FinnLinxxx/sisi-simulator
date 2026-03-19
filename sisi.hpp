@@ -83,11 +83,11 @@ struct DiagnosticsConfig {
 };
 
 struct OutputConfig {
+  bool save_results;
   bool save_path_lengths;
   bool save_registered_spot;
   bool save_hemisphere;
   bool save_photon_paths;
-  bool save_summary;
   std::string result_path;
   double hemisphere_radius_m;
 };
