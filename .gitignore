@@ -7,6 +7,10 @@ cmake_install.cmake
 Makefile
 compile_commands.json
 
+# Build artifacts
+sisi
+*.pc
+
 # Binaries / libraries
 *.o
 *.obj
@@ -38,6 +42,10 @@ Thumbs.db
 *.log
 *.tmp
 *.bak
+
+# yaml-cpp generated files (CMake modifies these)
+external/yaml-cpp/yaml-cpp-config.cmake
+external/yaml-cpp/yaml-cpp-targets.cmake
 
 # Keep sisi_data folder structure, ignore actual files
 sisi_data/laserscanner/*
