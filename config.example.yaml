@@ -6,7 +6,7 @@ simulation:
 
 light_source:
   wavelength_nm: 658
-  n_photons: 5000000
+  n_photons: 50000
 
 material:
   n_refractive_index: 1.42
