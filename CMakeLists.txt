@@ -1,8 +1,23 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.9)
 project(SISI-Simulator)
+
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose type of build." FORCE)
+    message(STATUS "Build-Type set ---> Release")
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+if(lto_supported)
+    message(STATUS "LTO (Link Time Optimization) ENABLED.")
+else()
+    message(STATUS "LTO DISABLED: ${lto_error}")
+endif()
 
 # Suppress Windows/MSVC crying
 if(MSVC)
@@ -18,6 +33,27 @@ include_directories(external/yaml-cpp/include)
 
 add_executable(sisi sisi.cpp)
 target_link_libraries(sisi yaml-cpp)
+
+if(lto_supported)
+    set_target_properties(sisi PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+# Fast Math Option
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(sisi PRIVATE
+        -O3 
+        -march=native 
+        -ffast-math
+    )
+elseif(MSVC)
+    target_compile_options(sisi PRIVATE
+        /O2       # Max Speed
+        /Ob2      
+        /Oi       
+        /Ot       
+        /fp:fast  
+    )
+endif()
 
 set(SISI_WORKSPACE_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/config.yaml")
 set(SISI_WORKSPACE_CONFIG_EXAMPLE "${CMAKE_CURRENT_SOURCE_DIR}/config.example.yaml")
