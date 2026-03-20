@@ -12,6 +12,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # LTO Check
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.9)
+
+    if(POLICY CMP0069)
+        cmake_policy(SET CMP0069 NEW)
+    endif()
+
     include(CheckIPOSupported)
     check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
     if(lto_supported)
