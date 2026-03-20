@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.7)
 project(SISI-Simulator)
 
 
@@ -10,13 +10,18 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
-include(CheckIPOSupported)
-check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
-if(lto_supported)
-    message(STATUS "LTO (Link Time Optimization) ENABLED.")
+# LTO Check
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.9)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
+    if(lto_supported)
+        message(STATUS "LTO (Link Time Optimization) ENABLED.")
+    else()
+        message(STATUS "LTO DISABLED: ${lto_error}")
+    endif()
 else()
-    message(STATUS "LTO DISABLED: ${lto_error}")
+    message(STATUS "CMake Version < 3.9: LTO check skipped for compatibility.")
+    set(lto_supported FALSE)
 endif()
 
 # Suppress Windows/MSVC crying
