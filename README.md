@@ -6,7 +6,7 @@
 
 <br>
 
-*A C++ Monte Carlo photon transport simulator for modeling light propagation in various materials and spatial setups —* <br> *— in an SI world.*
+*A C++ Monte Carlo photon transport simulator for modeling light propagation in various materials and spatial setups* <br> *— in an SI world.*
 <br>
 
 [![C++11](https://img.shields.io/badge/C++-11-00599C?style=flat-square&logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
