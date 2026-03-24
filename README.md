@@ -109,3 +109,35 @@ Copy `config.example.yaml` and rename it to `config.yaml` in the `sisi-simulator
 * **Warning:** Running the simulation again will overwrite existing files in the output directory!
 
 </details>
+
+### Configuration Parameters Explained
+
+A brief overview of what each parameter in the `config.yaml` file does:
+
+* **`mode`**: Defines which simulation type runs (`laserscanner`, `material_impulse`, or `patterson`).
+* **`simulation`**:
+    * `use_pseudo_random_seed`: If `true`, the simulation uses a fixed seed, ensuring identical results on repeat runs.
+    * `n_max_detections`: The maximum number of photon detections allowed before the simulation forcibly stops.
+* **`light_source`**:
+    * `wavelength_nm`: The wavelength of the simulated light (in nanometers).
+    * `n_photons`: The total number of photons to simulate.
+* **`material`**: Defines the optical properties of the target.
+    * `n_refractive_index`: Index of refraction.
+    * `absorption_coefficient_per_mm`: Likelihood of a photon being absorbed per mm.
+    * `scattering_coefficient_per_mm`: Likelihood of a photon scattering per mm.
+    * `anisotropy_g`: The scattering directionality (0.0 = isotropic, 1.0 = mainly forward).
+    * `specimen_thickness_m`: Thickness of the material (in meter).
+    * `microfacet_std_deviation_deg`: Surface roughness standard deviation in degrees.
+* **`optic` / `beam`**:
+    * `radius_m`: Radius of the receiving optic.
+    * `working_distance_m`: Distance from the optic to the specimen.
+    * `pinhole_sigma_factor`: Filters stray photons (Focus); `0.0` disables it.
+    * `rho_m`: Specific parameter for Patterson mode defining receiver distance offset.
+    * `sigma_x_m / y_m / z_m`: Standard deviations defining the laser beam's gaussian profile.
+* **`physics_override`**:
+    * `force_100_percent_transmission`: If `true`, forces photons to enter the material, ignoring specular reflection.
+* **`scan`**:
+    * `angles_deg`: A list of incidence angles to simulate (e.g., `[0, 1, 2]`).
+* **`diagnostics` & `output`**:
+    * Toggles (`true`/`false`) to print output to the console or save results: track photon paths, save registered spots, log paths or impact on a theoretical hemisphere.
+    * `result_path`: Directory where output files will be saved (e.g., `sisi_data/laserscanner`). Warning: files here get overwritten on subsequent runs.
