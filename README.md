@@ -110,6 +110,10 @@ Copy `config.example.yaml` and rename it to `config.yaml` in the `sisi-simulator
 
 </details>
 
+
+The simulator is controlled via a `config.yaml` file. You can choose between three main modes: `laserscanner`, `material_impulse`, and `patterson`. 
+
+
 ### Configuration Parameters Explained
 
 A brief overview of what each parameter in the `config.yaml` file does:
