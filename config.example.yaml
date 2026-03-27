@@ -10,7 +10,7 @@ light_source:
 
 material:
   n_refractive_index: 1.42
-  absorption_coefficient_per_mm: 0.045
+  absorption_coefficient_per_mm: 0.0045
   scattering_coefficient_per_mm: 0.6
   anisotropy_g: 0.0
   specimen_thickness_m: 9999999.0
@@ -88,7 +88,7 @@ material_impulse:
 
 patterson:
   optic:
-    radius_m: 0.002
+    radius_m: 0.005
     rho_m: 0.025
   physics_override:
     force_100_percent_transmission: true

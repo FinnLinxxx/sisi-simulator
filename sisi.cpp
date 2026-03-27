@@ -250,6 +250,7 @@ SisiConfig loadConfig(const std::string &filename) {
           .as<bool>();
 
   if (config.mode == SimulationMode::PATTERSON) {
+    config.active_mode.optic.pinhole_sigma_factor = 0.0;
     // In Patterson mode, the detector is placed directly on the surface
     // (z = 0). A tiny offset (0.1 µm) is hard-coded to avoid numerical
     // boundary collisions.
