@@ -387,8 +387,8 @@ std::pair<double, double> fresnel_reflection(double theta_i_rad, double n1,
 double incident_angle(const Direction3D &incident, const Direction3D &normal) {
   Direction3D incident_norm = normalize(incident);
   Direction3D normal_norm = normalize(normal);
-  double cos_theta = std::acos(dot(incident_norm, normal_norm));
-  return cos_theta;
+  double d = std::max(-1.0, std::min(1.0, dot(incident_norm, normal_norm)));
+  return std::acos(d);
 }
 
 double normalize_angle(double angle) {
@@ -414,15 +414,18 @@ Direction3D rnd_microfacet(double std_deviation_rad, double direction,
   double nx = 0, ny = 0, nz = 0;
   double sigma_rad = std_deviation_rad;
 
+  // Beckmann microfacet distribution (Beckmann & Spizzichino, 1963):
+  // Independent Gaussian slope components sx, sy ~ N(0, sigma_rad) model a
+  // Gaussian random surface. The resulting polar tilt angle theta follows a
+  // Rayleigh distribution with parameter sigma_rad, which is equivalent to the
+  // Beckmann NDF. The azimuthal angle is implicitly uniform by 2D-Gaussian symmetry.
   do {
-    double tiltX = sampleTilt(0.0, sigma_rad, rng); // Tilt X-Direction [rad]
-    double tiltY = sampleTilt(0.0, sigma_rad, rng); // Tilt Y-Direction [rad]
-
-    // Normal-Vector of tilted Surface
+    double tiltX = sampleTilt(0.0, sigma_rad, rng); // slope component sx ~ N(0, sigma)
+    double tiltY = sampleTilt(0.0, sigma_rad, rng); // slope component sy ~ N(0, sigma)
     nx = sin(tiltX);
     ny = sin(tiltY);
-    nz = sqrt(1.0 - nx * nx - ny * ny); // |n| = 1
   } while ((nx * nx + ny * ny) > 1);
+  nz = sqrt(1.0 - nx * nx - ny * ny); // computed once after valid (nx,ny) accepted
 
   double length = sqrt(nx * nx + ny * ny + nz * nz);
   nx /= length;
@@ -448,7 +451,9 @@ inline double computeCosThetaHG(const double &g, std::mt19937 &rng) {
   if (std::abs(g) < 1e-3)
     return 1.0 - 2.0 * u0;
   else {
-    const double sqrTerm = (1.0 - g * g) / (1.0 - g + 2.0 * g * u0);
+    const double denom = 1.0 - g + 2.0 * g * u0;
+    if (std::abs(denom) < 1e-12) return (g > 0.0) ? 1.0 : -1.0;
+    const double sqrTerm = (1.0 - g * g) / denom;
     return (1.0 + g * g - sqrTerm * sqrTerm) / (2.0 * g);
   }
 }

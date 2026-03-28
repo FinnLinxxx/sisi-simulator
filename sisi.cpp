@@ -592,13 +592,12 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
             determinePhotonHitSurfaceLocation(newPhotonEmissionLocation,
                                               basisZ);
 
-        photon_outer_life_distance += sqrt(
-            pow(newPhotonEmissionLocation.x - newPhotonHitSurfaceLocation.x,
-                2) +
-            pow(newPhotonEmissionLocation.y - newPhotonHitSurfaceLocation.y,
-                2) +
-            pow(newPhotonEmissionLocation.z - newPhotonHitSurfaceLocation.z,
-                2));
+        {
+          double dx = newPhotonEmissionLocation.x - newPhotonHitSurfaceLocation.x;
+          double dy = newPhotonEmissionLocation.y - newPhotonHitSurfaceLocation.y;
+          double dz = newPhotonEmissionLocation.z - newPhotonHitSurfaceLocation.z;
+          photon_outer_life_distance += sqrt(dx*dx + dy*dy + dz*dz);
+        }
 
         // -------------------------------------------------------------------
         // Material Boundary Transition
@@ -735,17 +734,6 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
               Position4D backscatteredPhoton_all = backscatteringMayHitOptic(
                   backscatteredPhoton_position, backscatteredPhoton_direction,
                   {0, 0, -working_distance_m}, 999999.9, config.mode);
-              // Berechne die Distanz von der Oberfläche bis zu dieser Ebene
-              double dist_surface_to_plane =
-                  sqrt(pow(backscatteredPhoton_position.x -
-                               backscatteredPhoton_all.x,
-                           2) +
-                       pow(backscatteredPhoton_position.y -
-                               backscatteredPhoton_all.y,
-                           2) +
-                       pow(backscatteredPhoton_position.z -
-                               backscatteredPhoton_all.z,
-                           2));
               if (SAVE_PHOTON_PATHS) {
                 pathsFile << "SubSurfaceScatteredALL "
                           << backscatteredPhoton_all.x << " "
@@ -809,20 +797,21 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
                 nPhotonsHitOptic++;
                 nPhotonsHO_scat++;
                 double photon_from_scatter_to_optics =
-                    sqrt(pow(currentPos.x - backscatteredPhoton.x, 2) +
-                         pow(currentPos.y - backscatteredPhoton.y, 2) +
-                         pow(currentPos.z - backscatteredPhoton.z, 2));
+                    sqrt((currentPos.x - backscatteredPhoton.x)*(currentPos.x - backscatteredPhoton.x) +
+                         (currentPos.y - backscatteredPhoton.y)*(currentPos.y - backscatteredPhoton.y) +
+                         (currentPos.z - backscatteredPhoton.z)*(currentPos.z - backscatteredPhoton.z));
                 photon_outer_life_distance += photon_from_scatter_to_optics;
 
                 if (SAVE_PATH_LENGTHS) {
                   distFile << photon_outer_life_distance << " "
                            << photon_inner_life_distance << " " << s_total_count
-                           << std::endl;
+                           << "\n";
                 }
 
                 if (SAVE_REGISTERED_SPOT) {
-		  spotFile << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
-         << lastX << " " << lastY << " " << lastZ << " " << photon_inner_life_distance << " " << s_total_count << " 2 " << std::endl;
+                  spotFile << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
+                           << lastX << " " << lastY << " " << lastZ << " "
+                           << photon_inner_life_distance << " " << s_total_count << " 2\n";
                 }
 
                 // DiodeHitPlane?:
@@ -994,20 +983,21 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
           nPhotonsHO_Refl++;
           nPhotonsHitOptic++;
           double photon_from_scatter_to_optics =
-              sqrt(pow(currentPos.x - backscatteredPhoton.x, 2) +
-                   pow(currentPos.y - backscatteredPhoton.y, 2) +
-                   pow(currentPos.z - backscatteredPhoton.z, 2));
+              sqrt((currentPos.x - backscatteredPhoton.x)*(currentPos.x - backscatteredPhoton.x) +
+                   (currentPos.y - backscatteredPhoton.y)*(currentPos.y - backscatteredPhoton.y) +
+                   (currentPos.z - backscatteredPhoton.z)*(currentPos.z - backscatteredPhoton.z));
           photon_outer_life_distance += photon_from_scatter_to_optics;
 
           if (SAVE_PATH_LENGTHS) {
             distFile << photon_outer_life_distance << " "
                      << photon_inner_life_distance << " " << s_total_count
-                     << std::endl;
+                     << "\n";
           }
 
           if (SAVE_REGISTERED_SPOT) {
-	    spotFile << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
-         <<  currentPos.x<< " " << currentPos.y << " " << currentPos.z << " " << " " << photon_inner_life_distance << " " << s_total_count << " 1 " << std::endl;
+            spotFile << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
+                     << currentPos.x << " " << currentPos.y << " " << currentPos.z << " "
+                     << photon_inner_life_distance << " " << s_total_count << " 1\n";
           }
 
           g_log.log(pid, ReflectedDirect,
