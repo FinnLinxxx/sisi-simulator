@@ -711,15 +711,20 @@ materialTransition(const Direction3D photon_direction, const double &n1,
     directionWithInfo.z = refracted.z;
     directionWithInfo.i = 2;
 
+    // DEPRECATED, may delete
     // TODO: Debug these returns:
-    if (refracted.z > 0 && photon_direction.z > 0) {
+    // RESOLVED (28.03.2026):
+    //  Removed global Z-direction checks: The main transport loop natively 
+    //  handles resulting immediate boundary collisions.
+    /*if (refracted.z > 0 && photon_direction.z > 0) {
       return directionWithInfo;
     } else if (refracted.z < 0 && photon_direction.z < 0) {
       return directionWithInfo;
     } else { // std::cout << "No valid Refraction!" << std::endl);
       return {directionWithInfo.x, directionWithInfo.y, directionWithInfo.z,
               -9};
-    }
+    }*/
+    return directionWithInfo;
   }
   //// Reflect (at surface, normal and totalreflection alike)
   else {
@@ -732,7 +737,10 @@ materialTransition(const Direction3D photon_direction, const double &n1,
     directionWithInfo.i = 1;
 
     // TODO: Debug these returns:
-    if (reflected.z > 0 && photon_direction.z < 0) {
+    // RESOLVED (28.03.2026):
+    //  Removed global Z-direction checks: The main transport loop natively 
+    //  handles resulting immediate boundary collisions.
+    /*if (reflected.z > 0 && photon_direction.z < 0) {
       // Photons direction negativ: on its way out of the specimen
       return directionWithInfo;
     } else if (reflected.z < 0 && photon_direction.z > 0) {
@@ -741,7 +749,8 @@ materialTransition(const Direction3D photon_direction, const double &n1,
     } else { // std::cout << "No valid Reflection!" << std::endl);
       return {directionWithInfo.x, directionWithInfo.y, directionWithInfo.z,
               -9};
-    }
+    }*/
+    return directionWithInfo;
   }
 }
 
