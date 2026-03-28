@@ -2,7 +2,7 @@ mode: laserscanner
 
 simulation:
   use_pseudo_random_seed: true
-  n_max_detections: 99999999
+  n_max_detections: 1000
 
 light_source:
   wavelength_nm: 658
@@ -10,28 +10,25 @@ light_source:
 
 material:
   microfacet_std_deviation_deg: 6.7  # top surface roughness (Beckmann NDF sigma)
-  # Multi-layer format: each layer has its own optical properties.
-  # The last layer should have a large thickness_m to act as semi-infinite.
-  # Backward-compatible single-layer format (flat keys) is also supported.
+  # Multi-layer: top layer zuerst, letzter Layer semi-infinite (grosse thickness_m).
   layers:
     - n_refractive_index: 1.42
-      absorption_coefficient_per_mm: 0.0045
-      scattering_coefficient_per_mm: 0.6
-      anisotropy_g: 0.0
-      thickness_m: 9999999.0
+      absorption_coefficient_per_mm: 0.002
+      scattering_coefficient_per_mm: 0.3
+      anisotropy_g: 0.8
+      thickness_m: 0.002        # 2 mm Top-Schicht (z.B. Epidermis)
 
-  # Example two-layer config (uncomment and adapt):
-  # layers:
-  #   - n_refractive_index: 1.42
-  #     absorption_coefficient_per_mm: 0.002
-  #     scattering_coefficient_per_mm: 0.3
-  #     anisotropy_g: 0.8
-  #     thickness_m: 0.002        # 2 mm top layer
-  #   - n_refractive_index: 1.38
-  #     absorption_coefficient_per_mm: 0.010
-  #     scattering_coefficient_per_mm: 1.2
-  #     anisotropy_g: 0.9
-  #     thickness_m: 9999999.0    # semi-infinite bottom layer
+    - n_refractive_index: 1.40
+      absorption_coefficient_per_mm: 0.008
+      scattering_coefficient_per_mm: 0.8
+      anisotropy_g: 0.9
+      thickness_m: 0.005        # 5 mm mittlere Schicht (z.B. Dermis)
+
+    - n_refractive_index: 1.38
+      absorption_coefficient_per_mm: 0.020
+      scattering_coefficient_per_mm: 1.5
+      anisotropy_g: 0.95
+      thickness_m: 9999999.0    # semi-infinite Boden-Schicht
 
 # ==========================================
 # MODE 1: Laserscanner Setup
@@ -40,7 +37,7 @@ laserscanner:
   optic:
     radius_m: 0.1
     working_distance_m: 5.0
-    pinhole_sigma_factor: 0.0 # 0.0 means its deactivated
+    pinhole_sigma_factor: 0.0
   beam:
     sigma_x_m: 0.008
     sigma_y_m: 0.012
@@ -67,7 +64,7 @@ laserscanner:
 material_impulse:
   optic:
     radius_m: 9.999
-    working_distance_m: 1. #not to close
+    working_distance_m: 1.
     pinhole_sigma_factor: 0.0
   beam:
     sigma_x_m: 0.0
@@ -91,18 +88,8 @@ material_impulse:
 
 # ==============================================================================
 # MODE 3: PATTERSON
+# Hinweis: Patterson liest immer nur Layer 0 (Top-Layer).
 # ==============================================================================
-# HINWEIS: Im Patterson-Modus wird das Photon 
-# nicht als externer Laserstrahl simuliert, sondern startet als isotrope Punkt-
-# quelle direkt im Material (bei z0 = 1/mu_s'). 
-# 
-# Daher werden folgende Parameter vom C++-Kern intern auf feste Werte gesetzt 
-# und muessen/koennen/duerfen hier NICHT angegeben werden:
-# - working_distance_m (intern auf 0.00001 gesetzt, nur für Visualisierungszwecke))
-# - beam: sigma_x_m, sigma_y_m, sigma_z_m (intern auf 0.0 gesetzt)
-# - scan:  angles_deg (intern auf genau einen Durchlauf bei 0 Grad gesetzt)
-# ==============================================================================
-
 patterson:
   optic:
     radius_m: 0.005

@@ -46,13 +46,17 @@ struct LightSourceConfig {
   uint32_t n_photons;
 };
 
-struct MaterialConfig {
+struct LayerConfig {
   double n_refractive_index;
   double absorption_coefficient_per_mm;
   double scattering_coefficient_per_mm;
   double anisotropy_g;
-  double specimen_thickness_m;
-  double microfacet_std_deviation_deg;
+  double thickness_m;
+};
+
+struct MaterialConfig {
+  double microfacet_std_deviation_deg; // top surface roughness only
+  std::vector<LayerConfig> layers;
 };
 
 // Modi specific structs
@@ -785,6 +789,33 @@ inline Direction3D scatter(const Direction3D &wo, const double &g,
   Direction3D wi = sphericalDirection(sinTheta, cosTheta, phi, v1, v2, woNorm);
 
   return normalize(wi);
+}
+
+// Fresnel transition at a flat internal layer boundary (no microfacet roughness).
+// Polarization is assumed lost after subsurface scattering: unpolarized average used.
+Direction4D internalLayerTransition(const Direction3D &photon_dir,
+                                    double n_from, double k_from,
+                                    double n_to,   double k_to,
+                                    std::mt19937 &rng) {
+  static std::uniform_real_distribution<double> uniform01(0.0, 1.0);
+
+  // Normal points in the same z-direction as photon travel (consistent with
+  // materialTransition convention)
+  Direction3D flat_normal = {0.0, 0.0, (photon_dir.z >= 0.0) ? 1.0 : -1.0};
+
+  double theta = incident_angle(photon_dir, flat_normal); // clamped acos
+  std::pair<double,double> fr = fresnel_reflection(theta, n_from, k_from, n_to, k_to);
+  double T = 1.0 - 0.5 * (fr.first + fr.second); // unpolarized transmission
+
+  Direction3D refracted = refract(photon_dir, flat_normal, n_from, n_to);
+  if (refracted.x == -9) T = 0.0; // TIR: force reflection
+
+  if (uniform01(rng) < T) {
+    return {refracted.x, refracted.y, refracted.z, 2};
+  } else {
+    Direction3D reflected = reflect(photon_dir, flat_normal);
+    return {reflected.x, reflected.y, reflected.z, 1};
+  }
 }
 
 // relative paths

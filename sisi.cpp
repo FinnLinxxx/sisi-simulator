@@ -223,17 +223,32 @@ SisiConfig loadConfig(const std::string &filename) {
   config.light_source.n_photons =
       yaml["light_source"]["n_photons"].as<uint32_t>();
 
-  config.material.n_refractive_index =
-      yaml["material"]["n_refractive_index"].as<double>();
-  config.material.absorption_coefficient_per_mm =
-      yaml["material"]["absorption_coefficient_per_mm"].as<double>();
-  config.material.scattering_coefficient_per_mm =
-      yaml["material"]["scattering_coefficient_per_mm"].as<double>();
-  config.material.anisotropy_g = yaml["material"]["anisotropy_g"].as<double>();
-  config.material.specimen_thickness_m =
-      yaml["material"]["specimen_thickness_m"].as<double>();
   config.material.microfacet_std_deviation_deg =
       yaml["material"]["microfacet_std_deviation_deg"].as<double>();
+
+  // Multi-layer format: material.layers list
+  // Backward compat: if no layers key, read flat single-layer format
+  if (yaml["material"]["layers"]) {
+    for (const auto &ly : yaml["material"]["layers"]) {
+      LayerConfig lc;
+      lc.n_refractive_index            = ly["n_refractive_index"].as<double>();
+      lc.absorption_coefficient_per_mm = ly["absorption_coefficient_per_mm"].as<double>();
+      lc.scattering_coefficient_per_mm = ly["scattering_coefficient_per_mm"].as<double>();
+      lc.anisotropy_g                  = ly["anisotropy_g"].as<double>();
+      lc.thickness_m                   = ly["thickness_m"].as<double>();
+      config.material.layers.push_back(lc);
+    }
+  } else {
+    LayerConfig lc;
+    lc.n_refractive_index            = yaml["material"]["n_refractive_index"].as<double>();
+    lc.absorption_coefficient_per_mm = yaml["material"]["absorption_coefficient_per_mm"].as<double>();
+    lc.scattering_coefficient_per_mm = yaml["material"]["scattering_coefficient_per_mm"].as<double>();
+    lc.anisotropy_g                  = yaml["material"]["anisotropy_g"].as<double>();
+    lc.thickness_m                   = yaml["material"]["specimen_thickness_m"].as<double>();
+    config.material.layers.push_back(lc);
+  }
+  if (config.material.layers.empty())
+    throw std::runtime_error("ERROR: material has no layers defined in config!");
 
   // 3. Read active mode parameter (mode_node)
   config.active_mode.optic.radius_m =
@@ -315,12 +330,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   ////////////////////////////////////////////////////////////////
   // Yaml/Read config start
   uint32_t nPhotons = config.light_source.n_photons;
-  double n_refractive_index = config.material.n_refractive_index;
   // Laser Wavelength
   const double lambda_m = config.light_source.wavelength_nm * 1e-9;
-  // Absorption and Scattering Coefficient
-  double mu_a = config.material.absorption_coefficient_per_mm * 1000.0; // [1/m]
-  double mu_s = config.material.scattering_coefficient_per_mm * 1000.0; // [1/m]
   // Geometry and Optics
   double working_distance_m = config.active_mode.optic.working_distance_m;
   double radius_m = config.active_mode.optic.radius_m;
@@ -329,15 +340,9 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   double sigma_x_m = config.active_mode.beam.sigma_x_m;
   double sigma_y_m = config.active_mode.beam.sigma_y_m;
   double sigma_z_m = config.active_mode.beam.sigma_z_m;
-  // Material
-  // _deg for external readability
-  double microfacet_std_deviation_deg =
-      config.material.microfacet_std_deviation_deg;
-  // _rad for internal/math calculations
-  double microfacet_std_deviation_rad =
-      (config.material.microfacet_std_deviation_deg * M_PI) / 180.0;
-  double specimen_thickness_m = config.material.specimen_thickness_m;
-  double hg_parameter = config.material.anisotropy_g;
+  // Surface roughness
+  double microfacet_std_deviation_deg = config.material.microfacet_std_deviation_deg;
+  double microfacet_std_deviation_rad = (microfacet_std_deviation_deg * M_PI) / 180.0;
   // Control
   std::string result_path = config.active_mode.output.result_path;
   uint32_t n_max_detections = config.simulation.n_max_detections;
@@ -346,16 +351,32 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   double hemisphere_radius_m = config.active_mode.output.hemisphere_radius_m;
   // Patterson
   double rho_m = config.active_mode.optic.rho_m;
+
+  // Per-layer optical properties (precomputed, all in SI units [1/m])
+  const int N_layers = static_cast<int>(config.material.layers.size());
+  std::vector<double> layer_mu_a(N_layers), layer_mu_s(N_layers),
+                      layer_mu_t(N_layers), layer_g(N_layers),
+                      layer_n(N_layers),    layer_k(N_layers);
+  // Cumulative z-boundaries: z_bound[i] = top of layer i, z_bound[N] = bottom
+  std::vector<double> z_bound(N_layers + 1);
+  z_bound[0] = 0.0;
+  for (int li = 0; li < N_layers; li++) {
+    layer_mu_a[li] = config.material.layers[li].absorption_coefficient_per_mm * 1000.0;
+    layer_mu_s[li] = config.material.layers[li].scattering_coefficient_per_mm * 1000.0;
+    layer_mu_t[li] = layer_mu_a[li] + layer_mu_s[li];
+    layer_g[li]    = config.material.layers[li].anisotropy_g;
+    layer_n[li]    = config.material.layers[li].n_refractive_index;
+    layer_k[li]    = (layer_mu_a[li] * lambda_m) / (4.0 * M_PI);
+    z_bound[li+1]  = z_bound[li] + config.material.layers[li].thickness_m;
+  }
+  double specimen_thickness_m = z_bound[N_layers]; // total depth (for output)
+  // Hard-coded refractive index of air
+  double n1 = 1.00028;
+  // Layer-0 values used at the top surface entry (air -> layer 0)
+  double n_refractive_index = layer_n[0];
+  double k = layer_k[0];
   ///////////////////////////////////////////////////////////////
   // Yaml Read End
-
-  // Extinction coefficient
-  double mu_t = mu_a + mu_s; // [1/m]
-  // k (Imaginary part of the refractive index for Fresnel)
-  // Derived physically from μ_a and the wavelength
-  double k = (mu_a * lambda_m) / (4.0 * M_PI); // No Dimension
-  // Hard-Coded refraction index of air
-  double n1 = 1.00028;
 
   // clang-format off
   // Global photon fate counters
@@ -393,17 +414,17 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
 
   // Uniform Distribution between 0 and 1
   std::uniform_real_distribution<double> uniform01(0.0, 1.0);
-  // Exp Distribution (derived from mu_t)
-  std::exponential_distribution<double> expDist(mu_t);
+  // Note: exponential step lengths are sampled per-layer inside the photon loop
 
   ///////////////////////////////////////
   // 1x Make Directory + 4x DEBUG Data filestream provider
   ///////////////////////////////////////
 
   // Generate config specific sub-folder
+  // Folder name uses layer-0 properties as representative identifiers
   char folderPart[256];
   snprintf(folderPart, sizeof(folderPart), "%.2f_%.4f_%.4f_%.2f",
-           n_refractive_index, mu_a / 1000., mu_s / 1000.,
+           layer_n[0], layer_mu_a[0] / 1000., layer_mu_s[0] / 1000.,
            microfacet_std_deviation_deg);
 
   std::string full_path = result_path + "/" + folderPart;
@@ -422,7 +443,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   char filenameDist[512];
   snprintf(filenameDist, sizeof(filenameDist),
            "%s/dist_%.2f_%.4f_%.4f_%.2f_%.2f.txt", full_path.c_str(),
-           n_refractive_index, mu_a / 1000., mu_s / 1000.,
+           layer_n[0], layer_mu_a[0] / 1000., layer_mu_s[0] / 1000.,
            microfacet_std_deviation_deg, theta_in_deg);
 
   std::ofstream distFile;
@@ -441,7 +462,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   char filenameSpot[512];
   snprintf(filenameSpot, sizeof(filenameSpot),
            "%s/spot_%.2f_%.4f_%.4f_%.2f_%.2f.txt", full_path.c_str(),
-           n_refractive_index, mu_a / 1000., mu_s / 1000.,
+           layer_n[0], layer_mu_a[0] / 1000., layer_mu_s[0] / 1000.,
            microfacet_std_deviation_deg, theta_in_deg);
 
   std::ofstream spotFile;
@@ -462,7 +483,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   char filenameHemi[512];
   snprintf(filenameHemi, sizeof(filenameHemi),
            "%s/hemisphere_%.2f_%.4f_%.4f_%.2f_%.2f.txt", full_path.c_str(),
-           n_refractive_index, mu_a / 1000., mu_s / 1000.,
+           layer_n[0], layer_mu_a[0] / 1000., layer_mu_s[0] / 1000.,
            microfacet_std_deviation_deg, theta_in_deg);
 
   std::ofstream hemiFile;
@@ -483,7 +504,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   char filenamePaths[512];
   snprintf(filenamePaths, sizeof(filenamePaths),
            "%s/paths_%.2f_%.4f_%.4f_%.2f_%.2f.txt", full_path.c_str(),
-           n_refractive_index, mu_a / 1000., mu_s / 1000.,
+           layer_n[0], layer_mu_a[0] / 1000., layer_mu_s[0] / 1000.,
            microfacet_std_deviation_deg, theta_in_deg);
 
   std::ofstream pathsFile;
@@ -510,6 +531,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
 
     int scat_count = 0; // Scatter count in the material
     int refl_count = 0; // Number of reflection events (surface + TIR)
+    int current_layer = 0; // Active layer index (updated at internal boundaries)
 
     uint16_t s_total_count = 0; // Number of distinct path segments flown
     double s_total = 0; // Cumulative distance traveled inside the material
@@ -528,12 +550,14 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
       // Patterson Mode Start
       ///////////////////////////////////////
       if (config.mode == SimulationMode::PATTERSON) {
-        // Calculate the starting depth z0
+        // Calculate the starting depth z0 using layer-0 properties
         // Equals z0 = 1 / mu_s' (with mu_s' = mu_s * (1 - g))
-        double mu_s_prime = mu_s * (1.0 - hg_parameter);
+        double mu_s_prime = layer_mu_s[0] * (1.0 - layer_g[0]);
         double z0 = 1.0 / mu_s_prime;
 
         currentPos = {0.0, 0.0, z0};
+        // Patterson always stays in layer 0 regardless of z0 depth
+        current_layer = 0;
 
         // Generate isotropic vector for initial scattering
         double rnd_phi = 2.0 * M_PI * uniform01(rng);
@@ -641,27 +665,55 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
                   "i1");
 
         while (1) {
-          // Travelled distance to new event (mu_t = mu_a + mu_s)
-          double s = expDist(rng);
+          // Sample free path in current layer
+          double s = std::exponential_distribution<double>(layer_mu_t[current_layer])(rng);
 
           s_total += s;
           s_total_count += 1;
           double distToBoundary = 0;
 
-          // When photon leaves specimen in the back (which is unlikely in case
-          // of a high thickness)
           if (currentDir.z > 0) {
-            distToBoundary = (specimen_thickness_m - currentPos.z) /
-                             currentDir.z; // Points towards the bottom surface
+            // Heading down: check bottom of current layer
+            distToBoundary = (z_bound[current_layer + 1] - currentPos.z) / currentDir.z;
             if (s > distToBoundary) {
-              nPhotonsTransmitted++;
-              break;
+              if (current_layer == N_layers - 1) {
+                // Bottom of last layer: photon transmitted through specimen
+                nPhotonsTransmitted++;
+                break;
+              } else if (config.mode != SimulationMode::PATTERSON) {
+                // Internal boundary going down: layer current_layer -> current_layer+1
+                s_total -= (s - distToBoundary); // correct path accumulation
+                currentPos = add(currentPos, scalarMultiply(currentDir, distToBoundary));
+                Direction4D trans = internalLayerTransition(
+                    currentDir,
+                    layer_n[current_layer], layer_k[current_layer],
+                    layer_n[current_layer + 1], layer_k[current_layer + 1], rng);
+                currentDir = {trans.x, trans.y, trans.z};
+                if (trans.i == 2) current_layer++;
+                continue; // resample step in new layer (memoryless)
+              }
             }
-          } else if (currentDir.z <= 0) {
-            // Points towards the top surface
-            distToBoundary = -currentPos.z / currentDir.z;
+          } else if (currentDir.z < 0) {
+            // Heading up: check top of current layer
+            distToBoundary = (z_bound[current_layer] - currentPos.z) / currentDir.z;
+            if (s > distToBoundary && current_layer > 0 && config.mode != SimulationMode::PATTERSON) {
+              // Internal boundary going up: layer current_layer -> current_layer-1
+              s_total -= (s - distToBoundary);
+              currentPos = add(currentPos, scalarMultiply(currentDir, distToBoundary));
+              Direction4D trans = internalLayerTransition(
+                  currentDir,
+                  layer_n[current_layer], layer_k[current_layer],
+                  layer_n[current_layer - 1], layer_k[current_layer - 1], rng);
+              currentDir = {trans.x, trans.y, trans.z};
+              if (trans.i == 2) current_layer--;
+              continue;
+            }
+            // current_layer == 0 falls through to the top surface exit below
+          } else {
+            distToBoundary = 1e30; // horizontal: no boundary
           }
-          // Photon may leave specimen on top surface
+
+          // Top surface exit (current_layer == 0, heading up, s > distToBoundary)
           if (s > distToBoundary && (currentDir.z < 0)) {
             do {
               Direction3D microfacetNormal;
@@ -673,8 +725,8 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
               } while (dot(currentDir, microfacetNormal) < 0);
 
               directionAfterMaterialTransition = materialTransition(
-                  currentDir, n1, n_refractive_index, k, microfacetNormal,
-                  {-1.0, -10.00, -100.000}, force_transmission, rng);
+                  currentDir, n1, layer_n[current_layer], layer_k[current_layer],
+                  microfacetNormal, {-1.0, -10.00, -100.000}, force_transmission, rng);
               // Dummy vector: Polarization is lost after internal scattering
             } while (directionAfterMaterialTransition.i == -9);
 
@@ -897,7 +949,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
             // currentPos.y << " " << currentPos.z << std::endl; }
           }
 
-          if (uniform01(rng) < mu_a / mu_t) {
+          if (uniform01(rng) < layer_mu_a[current_layer] / layer_mu_t[current_layer]) {
             nPhotonsAbsorbed++;
 
             if (SAVE_PHOTON_PATHS) {
@@ -921,7 +973,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
             break;
           }
 
-          currentDir = scatter(currentDir, hg_parameter, rng);
+          currentDir = scatter(currentDir, layer_g[current_layer], rng);
           g_log.log(pid, ScatteredInMaterial,
                     Pose{currentPos.x, currentPos.y, currentPos.z, currentDir.x,
                          currentDir.y, currentDir.z},
@@ -1080,7 +1132,7 @@ void SISI_Simulation(double theta_in_deg, const SisiConfig &config,
   // SAVE_RESULTS
   char filename[512];
   snprintf(filename, sizeof(filename), "%s/%.2f_%.4f_%.4f_%.2f.txt",
-           full_path.c_str(), n_refractive_index, mu_a / 1000., mu_s / 1000.,
+           full_path.c_str(), layer_n[0], layer_mu_a[0] / 1000., layer_mu_s[0] / 1000.,
            microfacet_std_deviation_deg);
 
   std::ofstream sFile;
