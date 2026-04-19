@@ -1,0 +1,60 @@
+# Build directories
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Build artifacts
+sisi
+*.pc
+
+# Binaries / libraries
+*.o
+*.obj
+*.so
+*.a
+*.out
+*.exe
+*.dll
+*.lib
+
+# Debug / crash files
+core
+core.*
+vgcore.*
+*.stackdump
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+*.tmp
+*.bak
+
+# yaml-cpp generated files (CMake modifies these)
+external/yaml-cpp/yaml-cpp-config.cmake
+external/yaml-cpp/yaml-cpp-targets.cmake
+
+# Keep sisi_data folder structure, ignore actual files
+sisi_data/laserscanner/*
+sisi_data/material_impulse/*
+sisi_data/patterson/*
+
+!sisi_data/laserscanner/.gitkeep
+!sisi_data/material_impulse/.gitkeep
+!sisi_data/patterson/.gitkeep
+
+# Runtime / user config
+config.yaml

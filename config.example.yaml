@@ -1,0 +1,105 @@
+mode: laserscanner
+
+simulation:
+  use_pseudo_random_seed: true
+  n_max_detections: 99999999
+
+light_source:
+  wavelength_nm: 658
+  n_photons: 50000
+
+material:
+  n_refractive_index: 1.42
+  absorption_coefficient_per_mm: 0.0045
+  scattering_coefficient_per_mm: 0.6
+  anisotropy_g: 0.0
+  specimen_thickness_m: 9999999.0
+  microfacet_std_deviation_deg: 6.7
+
+# ==========================================
+# MODE 1: Laserscanner Setup
+# ==========================================
+laserscanner:
+  optic:
+    radius_m: 0.1
+    working_distance_m: 5.0
+    pinhole_sigma_factor: 0.0 # 0.0 means its deactivated
+  beam:
+    sigma_x_m: 0.008
+    sigma_y_m: 0.012
+    sigma_z_m: 0.989
+  physics_override:
+    force_100_percent_transmission: false
+  scan:
+    angles_deg: [0,1,2,3,4,5,6,7,8,9,10]
+  diagnostics:
+    track_photon_paths: false
+    print_results: true
+  output:
+    save_results: true
+    save_path_lengths: true
+    save_registered_spot: true
+    save_hemisphere: true
+    hemisphere_radius_m: 5.0
+    save_photon_paths: false
+    result_path: sisi_data/laserscanner
+
+# ==========================================
+# MODE 2: Material-Impulsantwort
+# ==========================================
+material_impulse:
+  optic:
+    radius_m: 9.999
+    working_distance_m: 1. #not to close
+    pinhole_sigma_factor: 0.0
+  beam:
+    sigma_x_m: 0.0
+    sigma_y_m: 0.0
+    sigma_z_m: 0.0
+  physics_override:
+    force_100_percent_transmission: true
+  scan:
+    angles_deg: [50]
+  diagnostics:
+    track_photon_paths: false
+    print_results: true
+  output:
+    save_results: true
+    save_path_lengths: true
+    save_registered_spot: true
+    save_hemisphere: false
+    hemisphere_radius_m: 5.0
+    save_photon_paths: false
+    result_path: sisi_data/material_impulse
+
+# ==============================================================================
+# MODE 3: PATTERSON
+# ==============================================================================
+# HINWEIS: Im Patterson-Modus wird das Photon 
+# nicht als externer Laserstrahl simuliert, sondern startet als isotrope Punkt-
+# quelle direkt im Material (bei z0 = 1/mu_s'). 
+# 
+# Daher werden folgende Parameter vom C++-Kern intern auf feste Werte gesetzt 
+# und muessen/koennen/duerfen hier NICHT angegeben werden:
+# - working_distance_m (intern auf 0.00001 gesetzt, nur für Visualisierungszwecke))
+# - beam: sigma_x_m, sigma_y_m, sigma_z_m (intern auf 0.0 gesetzt)
+# - scan:  angles_deg (intern auf genau einen Durchlauf bei 0 Grad gesetzt)
+# ==============================================================================
+
+patterson:
+  optic:
+    radius_m: 0.005
+    rho_m: 0.025
+  physics_override:
+    force_100_percent_transmission: true
+  diagnostics:
+    track_photon_paths: false
+    print_results: true
+  output:
+    save_results: false
+    save_path_lengths: true
+    save_registered_spot: true
+    save_hemisphere: false
+    hemisphere_radius_m: 5.0
+    save_photon_paths: false
+    result_path: sisi_data/patterson
