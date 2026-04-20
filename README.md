@@ -19,6 +19,8 @@
 ## Description
 The **SISI Simulator** is a C++ Monte Carlo photon transport simulator, testing propagation in various materials and setups. It supports three operational modes: classic laserscanner , material impulse response testing, and the [Patterson measurement setup](https://opg.optica.org/ao/fulltext.cfm?uri=ao-28-12-2331). The simulation relies on a configuration file (`config.yaml`) to dictate physical parameters, optics, beam profiles, and output formatting.
 
+For the blog entry and web version of SISI (2D) [click here](https://finnlinxxx.github.io/sisi/index.html)
+
 ## Installation
 
 <details open>
